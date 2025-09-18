@@ -18,12 +18,12 @@ CONV_VERSION="llama"
 MODEL_MAX_LENGTH=2048
 
 # Optimized training settings for 48GB single GPU
-PER_DEVICE_BATCH_SIZE=32     # Maximize for 48GB
-GRAD_ACCUM_STEPS=2           # Effective batch = 64
+PER_DEVICE_BATCH_SIZE=256     # Maximize for 48GB
+GRAD_ACCUM_STEPS=1           
 LEARNING_RATE=1e-3
 WEIGHT_DECAY=0.0
 WARMUP_RATIO=0.03
-SAVE_STEPS=2500              # Save more frequently
+SAVE_STEPS=2500              
 
 echo "🚀 Starting Optimized Single-GPU Proteomics Pretraining..."
 echo "💻 Using all TinyLLaVA optimizations for maximum speed"
@@ -68,7 +68,7 @@ python -m tinyllava.train.train \
     --lazy_preprocess True \
     --report_to tensorboard \
     --remove_unused_columns False \
-    --group_by_modality_length True \
+    --group_by_modality_length False \
     --training_recipe common \
     --tune_type_llm frozen \
     --tune_type_vision_tower full \
