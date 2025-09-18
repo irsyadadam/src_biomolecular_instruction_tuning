@@ -2,6 +2,7 @@
 
 export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
 
+CUDA_GPU="0,4"
 
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
 PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
@@ -13,11 +14,11 @@ CONNECTOR_TYPE="mlp2x_gelu"
 CONV_VERSION="llama"  
 MODEL_MAX_LENGTH=2048
 
-PER_DEVICE_BATCH_SIZE=64 
-GRAD_ACCUM_STEPS=2      
-LEARNING_RATE=1e-3
-WEIGHT_DECAY=0.0
-WARMUP_RATIO=0.03
+PER_DEVICE_BATCH_SIZE=80 
+GRAD_ACCUM_STEPS=1      
+LEARNING_RATE=2e-3
+WEIGHT_DECAY=0.01 
+WARMUP_RATIO=0.1 
 SAVE_STEPS=1000           
 
 echo "Proteomics Pretraining..."
@@ -28,7 +29,7 @@ echo "Output: $OUTPUT_DIR"
 echo "Effective batch size: $((PER_DEVICE_BATCH_SIZE * GRAD_ACCUM_STEPS * 2))"
 echo "Training only MLP tower + connector"
 
-deepspeed --include localhost:0,4 --master_port 29501 tinyllava/train/train.py \
+deepspeed --include localhost:$CUDA_GPU --master_port 29501 tinyllava/train/train.py \
     --deepspeed ./scripts/zero2.json \
     --data_path $DATA_PATH \
     --proteomics_data_path $PROTEOMICS_DATA_PATH \
@@ -61,9 +62,9 @@ deepspeed --include localhost:0,4 --master_port 29501 tinyllava/train/train.py \
     --tf32 True \
     --model_max_length $MODEL_MAX_LENGTH \
     --gradient_checkpointing True \
-    --dataloader_num_workers 4 \
+    --dataloader_num_workers 6 \
     --dataloader_pin_memory True \
-    --dataloader_prefetch_factor 4 \
+    --dataloader_prefetch_factor 2 \
     --dataloader_persistent_workers True \
     --lazy_preprocess True \
     --report_to tensorboard \
