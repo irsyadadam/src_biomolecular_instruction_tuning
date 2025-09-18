@@ -132,9 +132,9 @@ def test_proteomics_model(model_path, sample_id, question):
                 inputs=input_tokens,
                 images=proteomics_tensor,  # This should work in proteomics mode
                 max_new_tokens=128,
-                temperature=0.7,
-                top_p=0.9,
-                do_sample=True,
+                temperature=0.1,
+                top_p=None,
+                do_sample=False,
                 repetition_penalty=1.2,
                 pad_token_id=tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id,
                 eos_token_id=tokenizer.eos_token_id,

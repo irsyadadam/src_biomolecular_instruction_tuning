@@ -63,7 +63,6 @@ def train():
     
     # EXPLICITLY SET PROTEOMICS CONFIG FROM DATA_ARGUMENTS
     if getattr(data_arguments, 'proteomics_mode', False):
-        print("🔬 Enabling proteomics mode in model config...")
         model_config.proteomics_mode = data_arguments.proteomics_mode
         model_config.num_proteins = getattr(data_arguments, 'num_proteins', 4792)
         model_config.proteomics_data_path = getattr(data_arguments, 'proteomics_data_path', None)
@@ -71,7 +70,7 @@ def train():
         model_config.mlp_hidden_size = getattr(data_arguments, 'mlp_hidden_size', 256)
         model_config.mlp_dropout = getattr(data_arguments, 'mlp_dropout', 0.3)
         
-        print(f"✅ Proteomics config set:")
+        print(f"Proteomics config:")
         print(f"  - proteomics_mode: {model_config.proteomics_mode}")
         print(f"  - num_proteins: {model_config.num_proteins}")
         print(f"  - proteomics_data_path: {model_config.proteomics_data_path}")

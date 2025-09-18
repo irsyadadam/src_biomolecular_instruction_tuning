@@ -8,8 +8,8 @@ export CUDA_VISIBLE_DEVICES=4
 # Paths - UPDATE THESE
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_finetune_conversations.json"
 PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
-PRETRAINED_MODEL_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/pretrain_output"  # Output from Stage 1
-OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/finetune_output"
+PRETRAINED_MODEL_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/pretrain"  # Output from Stage 1
+OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/finetune"
 
 # Model settings - MUST match Stage 1 exactly
 LLM_VERSION="TinyLlama/TinyLlama-1.1B-Chat-v1.0"
