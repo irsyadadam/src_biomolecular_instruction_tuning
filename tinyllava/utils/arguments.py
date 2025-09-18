@@ -43,6 +43,12 @@ class DataArguments:
     image_folder: Optional[str] = field(default=None)
     image_aspect_ratio: str = 'square'
     conv_version: str = 'pretrain'
+    proteomics_mode: bool = field(default=False)
+    proteomics_data_path: Optional[str] = field(default=None)
+    num_proteins: int = field(default=4792)
+    mlp_tower_type: str = field(default='mlp_3')
+    mlp_hidden_size: int = field(default=256)
+    mlp_dropout: float = field(default=0.3)
 
 
 @dataclass

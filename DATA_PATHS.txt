@@ -13,3 +13,6 @@ format:
 {"instruction": "Considering the identified protein signatures in this patient, would administering adjuvant chemotherapy be appropriate according to the molecular profile?", "input": "", "output": "Based on the molecular signature, this patient should receive this treatment: Yes.", "sample_id": ["C3L-00104_tumor"]}
 {"instruction": "Based on the molecular profile of a patient, can you infer their sex?", "input": "", "output": "Based on the molecular signature, the sex is Male.", "sample_id": ["C3L-00104_tumor"]}
 {"instruction": "Utilizing the proteomics profile of this patient, identify the corresponding tumor classification.?", "input": "", "output": "Based on the molecular signature, the tumor code is GBM.", "sample_id": ["C3L-00365_tumor"]}
+
+   Stage 1:/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json
+   Stage 2:/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_finetune_conversations.json

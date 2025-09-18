@@ -13,32 +13,44 @@ from .text_preprocess import TextPreprocess
 from ..utils.arguments import DataArguments
 from ..utils.constants import *
 
+import pandas as pd
+import torch
+import glob
+import os
+
 class ProteinPreprocess:
     def __init__(self, data_args=None):
         self.data_args = data_args
         self.proteomics_data = self._load_proteomics_data()
     
     def _load_proteomics_data(self):
-        proteomics_dir = getattr(self.data_args, 'proteomics_data_path', 'data/filtered_proteomics')
-        proteomics_files = glob.glob(os.path.join(proteomics_dir, '*_filtered_proteomics.csv'))
+        proteomics_dir = getattr(self.data_args, 'proteomics_data_path', 'data/proteomics')
+        csv_files = glob.glob(os.path.join(proteomics_dir, '*.csv'))
         
-        all_data = []
-        for prot_file in proteomics_files:
-            df = pd.read_csv(prot_file, index_col=0)
-            all_data.append(df)
+        if not csv_files:
+            raise FileNotFoundError(f"No CSV files found in {proteomics_dir}")
         
-        return pd.concat(all_data, axis=0)
+        dfs = []
+        for csv_file in csv_files:
+            df = pd.read_csv(csv_file, index_col=0)
+            df.index = df.index.astype(str)
+            dfs.append(df)
+        
+        combined_df = pd.concat(dfs, axis=0)
+        combined_df = combined_df[~combined_df.index.duplicated(keep='first')]
+        combined_df = combined_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+        
+        return combined_df
     
     def __call__(self, sample_id):
-        if sample_id and sample_id in self.proteomics_data.index:
-            protein_expression = torch.tensor(
-                self.proteomics_data.loc[sample_id].values, 
-                dtype=torch.float32
-            )
-        else:
-            protein_expression = torch.zeros(self.proteomics_data.shape[1], dtype=torch.float32)
+        if sample_id is None:
+            return torch.zeros(self.proteomics_data.shape[1], dtype=torch.float32)
         
-        return protein_expression
+        sample_id = str(sample_id)
+        if sample_id in self.proteomics_data.index:
+            return torch.tensor(self.proteomics_data.loc[sample_id].values, dtype=torch.float32)
+        else:
+            return torch.zeros(self.proteomics_data.shape[1], dtype=torch.float32)
 
 class LazySupervisedDataset(Dataset):
     def __init__(self, data_path: str,

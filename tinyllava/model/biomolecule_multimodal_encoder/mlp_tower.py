@@ -88,13 +88,24 @@ class MLPTower(nn.Module):
             mlp_tower_cfg = {}
         
         self.is_loaded = False
-        self.mlp_tower_name = mlp_tower_cfg.get('mm_mlp_tower', 'mlp_3')
-        self.select_layer = mlp_tower_cfg.get('mm_mlp_select_layer', -1) 
-        self.select_feature = mlp_tower_cfg.get('mm_mlp_select_feature', 'cls')
         
-        self.num_proteins = mlp_tower_cfg.get('num_proteins', 4792)  
-        self.hidden_size = mlp_tower_cfg.get('hidden_size', 256)
-        self.dropout = mlp_tower_cfg.get('dropout', 0.3)
+        # Handle both dict and object configs
+        if hasattr(mlp_tower_cfg, 'get'):
+            # Dictionary-like config
+            self.mlp_tower_name = mlp_tower_cfg.get('mm_mlp_tower', 'mlp_3')
+            self.select_layer = mlp_tower_cfg.get('mm_mlp_select_layer', -1) 
+            self.select_feature = mlp_tower_cfg.get('mm_mlp_select_feature', 'cls')
+            self.num_proteins = mlp_tower_cfg.get('num_proteins', 4792)
+            self.hidden_size = mlp_tower_cfg.get('hidden_size', 256)
+            self.dropout = mlp_tower_cfg.get('dropout', 0.3)
+        else:
+            # Object-like config (like our MLPConfig)
+            self.mlp_tower_name = getattr(mlp_tower_cfg, 'mm_mlp_tower', getattr(mlp_tower_cfg, 'mlp_tower_type', 'mlp_3'))
+            self.select_layer = getattr(mlp_tower_cfg, 'mm_mlp_select_layer', -1)
+            self.select_feature = getattr(mlp_tower_cfg, 'mm_mlp_select_feature', 'cls')
+            self.num_proteins = getattr(mlp_tower_cfg, 'num_proteins', 4792)
+            self.hidden_size = getattr(mlp_tower_cfg, 'hidden_size', 256)
+            self.dropout = getattr(mlp_tower_cfg, 'dropout', 0.3)
         
         if not delay_load:
             self.load_model()

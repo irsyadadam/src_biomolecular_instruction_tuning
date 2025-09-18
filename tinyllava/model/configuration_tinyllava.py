@@ -38,6 +38,14 @@ class TinyLlavaConfig(PretrainedConfig):
         tune_type_vision_tower = 'frozen',
         tune_vision_tower_from_layer = -1,
         
+        # Add proteomics-specific parameters
+        proteomics_mode = False,
+        num_proteins = 4792,
+        proteomics_data_path = None,
+        mlp_tower_type = 'mlp_3',
+        mlp_hidden_size = 256,
+        mlp_dropout = 0.3,
+        
         **kwargs
 
     ):
@@ -66,8 +74,18 @@ class TinyLlavaConfig(PretrainedConfig):
         self.use_cache = use_cache
         self.cache_dir = cache_dir
         self.tokenizer_use_fast = tokenizer_use_fast
+        
+        # Add proteomics attributes
+        self.proteomics_mode = proteomics_mode
+        self.num_proteins = num_proteins
+        self.proteomics_data_path = proteomics_data_path
+        self.mlp_tower_type = mlp_tower_type
+        self.mlp_hidden_size = mlp_hidden_size
+        self.mlp_dropout = mlp_dropout
+        
         self._load_text_config(text_config)
         self._load_vision_config(vision_config)
+
             
         super().__init__(**kwargs)
     
@@ -89,6 +107,14 @@ class TinyLlavaConfig(PretrainedConfig):
         self.tokenizer_model_max_length = getattr(config, 'model_max_length', 2048)
         self.tokenizer_padding_side = getattr(config, 'tokenizer_padding_side', 'right')
         
+        # Add proteomics config loading
+        self.proteomics_mode = getattr(config, 'proteomics_mode', False)
+        self.num_proteins = getattr(config, 'num_proteins', 4792)
+        self.proteomics_data_path = getattr(config, 'proteomics_data_path', None)
+        self.mlp_tower_type = getattr(config, 'mlp_tower_type', 'mlp_3')
+        self.mlp_hidden_size = getattr(config, 'mlp_hidden_size', 256)
+        self.mlp_dropout = getattr(config, 'mlp_dropout', 0.3)
+        
         self._load_text_config()
         self._load_vision_config()
       
@@ -108,6 +134,20 @@ class TinyLlavaConfig(PretrainedConfig):
     
     
     def _load_vision_config(self, vision_config=None):
+        # Handle proteomics mode with MLP tower
+        if self.proteomics_mode:
+            # Create a mock vision config for MLP tower
+            self.vision_config = type('MLPConfig', (), {
+                'model_name_or_path': 'mlp',
+                'model_name_or_path2': '',
+                'hidden_size': self.mlp_hidden_size,
+                'num_proteins': self.num_proteins,
+                'mlp_tower_type': self.mlp_tower_type,
+                'dropout': self.mlp_dropout
+            })()
+            self.vision_hidden_size = self.mlp_hidden_size
+            return
+            
         if self.vision_model_name_or_path is None or self.vision_model_name_or_path == '':
             self.vision_config = CONFIG_MAPPING['clip_vision_model'](
                 intermediate_size=4096,
@@ -128,6 +168,4 @@ class TinyLlavaConfig(PretrainedConfig):
                 
         self.vision_config.model_name_or_path = self.vision_model_name_or_path.split(':')[-1]
         self.vision_config.model_name_or_path2 = self.vision_model_name_or_path2.split(':')[-1]
-        self.vision_hidden_size = getattr(self.vision_config, 'hidden_size',  None)  
-        
-
+        self.vision_hidden_size = getattr(self.vision_config, 'hidden_size',  None)

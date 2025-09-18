@@ -114,15 +114,27 @@ class DataCollatorForSupervisedDataset(object):
                 batch['images'] = images
 
         return batch
-
-
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                                 data_args) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
-                                          data_path=data_args.data_path,
-                                          data_args=data_args)
-    data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+    
+    if getattr(data_args, 'proteomics_mode', False):
+        from .dataset_proteomics import LazySupervisedDataset, DataCollatorForSupervisedDataset
+        train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
+                                              data_path=data_args.data_path,
+                                              data_args=data_args)
+        data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+    else:
+        # Use original image dataset
+        train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
+                                              data_path=data_args.data_path,
+                                              data_args=data_args)
+        data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+    
     return dict(train_dataset=train_dataset,
                 eval_dataset=None,
                 data_collator=data_collator)
+
+
+
+
