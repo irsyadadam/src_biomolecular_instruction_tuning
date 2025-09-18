@@ -22,7 +22,6 @@ class LoRATrainingRecipe(BaseTrainingRecipe):
         self.training_arguments = training_arguments
         self.lora_skip_module = ['connector', 'vision_tower', 'language_model']
         
-        
     def training_model_converse(self, model):
         if self.training_arguments.tune_type_connector == 'lora':
             self.lora_skip_module.remove('connector')
@@ -30,6 +29,7 @@ class LoRATrainingRecipe(BaseTrainingRecipe):
             self.lora_skip_module.remove('language_model')
         if self.training_arguments.tune_type_vision_tower == 'lora':
             self.lora_skip_module.remove('vision_tower')
+        
         lora_config = LoraConfig(
             r=self.training_arguments.lora_r,
             lora_alpha=self.training_arguments.lora_alpha,
@@ -38,16 +38,19 @@ class LoRATrainingRecipe(BaseTrainingRecipe):
             bias=self.training_arguments.lora_bias,
             task_type="CAUSAL_LM",
         )
+        
         if self.training_arguments.bits == 16:
             if self.training_arguments.bf16:
                 model.to(torch.bfloat16)
             if self.training_arguments.fp16:
                 model.to(torch.float16)
-        if model.peft_config is None:
+        
+        # Check if model already has PEFT applied
+        if not hasattr(model, 'peft_config') or model.peft_config is None:
             log("Adding LoRA adapters...")
             model = get_peft_model(model, lora_config)  
-        return model
         
+        return model
         
     def save(self, model, trainer):
         model.config.use_cache = True

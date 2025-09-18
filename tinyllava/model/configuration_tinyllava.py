@@ -130,17 +130,15 @@ class TinyLlavaConfig(PretrainedConfig):
         self.tokenizer_model_max_length = getattr(config, 'model_max_length', 2048)
         self.tokenizer_padding_side = getattr(config, 'tokenizer_padding_side', 'right')
         
-        # Add proteomics config loading
         self.proteomics_mode = getattr(config, 'proteomics_mode', False)
         self.num_proteins = getattr(config, 'num_proteins', 4792)
         self.proteomics_data_path = getattr(config, 'proteomics_data_path', None)
         self.mlp_tower_type = getattr(config, 'mlp_tower_type', 'mlp_3')
         self.mlp_hidden_size = getattr(config, 'mlp_hidden_size', 256)
         self.mlp_dropout = getattr(config, 'mlp_dropout', 0.3)
-        
+                
         self._load_text_config()
         self._load_vision_config()
-      
     
     def _load_text_config(self, text_config=None):
         if self.llm_model_name_or_path is None or self.llm_model_name_or_path == '':

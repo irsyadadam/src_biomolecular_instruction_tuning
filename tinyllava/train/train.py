@@ -4,7 +4,6 @@ import pathlib
 import tokenizers
 import transformers
 
-
 from tinyllava.train.tinyllava_trainer import LLaVATrainer
 from tinyllava.training_recipe import TrainingRecipeFactory
 from tinyllava.utils import *
@@ -12,7 +11,6 @@ from tinyllava.model import *
 from tinyllava.data.dataset import make_supervised_data_module
 
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse('0.14')
-
 
 def load_settings(model_arguments, data_arguments, training_arguments):
     model_arguments.tune_type_connector = training_arguments.tune_type_connector
@@ -45,7 +43,6 @@ def _load_connector_settings(model_arguments):
     connector_args['connector_type'] = model_arguments.connector_type
     return connector_args
 
-
 def train():
     
     # load argument
@@ -59,9 +56,29 @@ def train():
     # model_args contain arguements for huggingface model .from_pretrained function
     model_args = load_settings(model_arguments, data_arguments, training_arguments)
     model_args = training_recipe.add_args(model_args)
+    
+    # CRITICAL FIX: Create config with proteomics settings
     model_config = TinyLlavaConfig()
     model_config.load_from_config(model_arguments)
+    
+    # EXPLICITLY SET PROTEOMICS CONFIG FROM DATA_ARGUMENTS
+    if getattr(data_arguments, 'proteomics_mode', False):
+        print("🔬 Enabling proteomics mode in model config...")
+        model_config.proteomics_mode = data_arguments.proteomics_mode
+        model_config.num_proteins = getattr(data_arguments, 'num_proteins', 4792)
+        model_config.proteomics_data_path = getattr(data_arguments, 'proteomics_data_path', None)
+        model_config.mlp_tower_type = getattr(data_arguments, 'mlp_tower_type', 'mlp_3')
+        model_config.mlp_hidden_size = getattr(data_arguments, 'mlp_hidden_size', 256)
+        model_config.mlp_dropout = getattr(data_arguments, 'mlp_dropout', 0.3)
+        
+        print(f"✅ Proteomics config set:")
+        print(f"  - proteomics_mode: {model_config.proteomics_mode}")
+        print(f"  - num_proteins: {model_config.num_proteins}")
+        print(f"  - proteomics_data_path: {model_config.proteomics_data_path}")
+        print(f"  - mlp_tower_type: {model_config.mlp_tower_type}")
+    
     model = TinyLlavaForConditionalGeneration(model_config)
+    
     # load pretrained checkpoint
     if training_arguments.pretrained_model_path is not None:
         model = training_recipe.load(model, model_args)
