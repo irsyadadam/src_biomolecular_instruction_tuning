@@ -3,6 +3,29 @@ from transformers import CONFIG_MAPPING
 from transformers import AutoConfig
 from tinyllava.utils.constants import *
 
+class MLPConfig(PretrainedConfig):
+    """Configuration for MLP Vision Tower"""
+    
+    model_type = "mlp"
+    
+    def __init__(
+        self,
+        model_name_or_path: str = "mlp",
+        model_name_or_path2: str = "",
+        hidden_size: int = 256,
+        num_proteins: int = 4792,
+        mlp_tower_type: str = "mlp_3",
+        dropout: float = 0.3,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.model_name_or_path = model_name_or_path
+        self.model_name_or_path2 = model_name_or_path2
+        self.hidden_size = hidden_size
+        self.num_proteins = num_proteins
+        self.mlp_tower_type = mlp_tower_type
+        self.dropout = dropout
+
 class TinyLlavaConfig(PretrainedConfig):
 
     model_type = "tinyllava"
@@ -131,20 +154,18 @@ class TinyLlavaConfig(PretrainedConfig):
         self.hidden_size = getattr(self.text_config, 'hidden_size',  getattr(self.text_config, 'model_dim', None))
         self.vocab_size = getattr(self.text_config, 'vocab_size',  None)
     
-    
-    
     def _load_vision_config(self, vision_config=None):
         # Handle proteomics mode with MLP tower
-        if self.proteomics_mode:
-            # Create a mock vision config for MLP tower
-            self.vision_config = type('MLPConfig', (), {
-                'model_name_or_path': 'mlp',
-                'model_name_or_path2': '',
-                'hidden_size': self.mlp_hidden_size,
-                'num_proteins': self.num_proteins,
-                'mlp_tower_type': self.mlp_tower_type,
-                'dropout': self.mlp_dropout
-            })()
+        if self.proteomics_mode or self.vision_model_name_or_path == 'mlp':
+            # Create a proper config for MLP tower that can be JSON serialized
+            self.vision_config = MLPConfig(
+                model_name_or_path='mlp',
+                model_name_or_path2='',
+                hidden_size=self.mlp_hidden_size,
+                num_proteins=self.num_proteins,
+                mlp_tower_type=self.mlp_tower_type,
+                dropout=self.mlp_dropout
+            )
             self.vision_hidden_size = self.mlp_hidden_size
             return
             

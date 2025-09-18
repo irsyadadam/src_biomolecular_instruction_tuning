@@ -7,12 +7,12 @@ export CUDA_VISIBLE_DEVICES=4
 
 # Paths - UPDATE THESE
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
-PROTEOMICS_DATA_PATH="../biomolecular_instruction_tuning_data/data/filtered_proteomics/"
+PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/pretrain_output"
 
-# Model settings
+# Model settings - FIXED for proteomics
 LLM_VERSION="TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-VISION_TOWER="mlp"
+VISION_TOWER="mlp"  # This will be handled specially in the proteomics mode
 CONNECTOR_TYPE="mlp2x_gelu"  # Better than linear for proteomics
 CONV_VERSION="llama"
 MODEL_MAX_LENGTH=2048
@@ -73,7 +73,7 @@ python -m tinyllava.train.train \
     --tune_type_llm frozen \
     --tune_type_vision_tower full \
     --tune_type_connector full \
-    --attn_implementation flash_attention_2
+    --attn_implementation flash_attention_2 \
 
 echo "✅ Optimized pretraining completed!"
 echo "📈 Check tensorboard logs: tensorboard --logdir $OUTPUT_DIR"

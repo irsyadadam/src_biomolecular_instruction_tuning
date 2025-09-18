@@ -8,8 +8,12 @@ import torch.distributed as dist
 root_logger = None
 
 def print_rank0(*args):
-    local_rank = dist.get_rank()
-    if local_rank == 0:
+    try:
+        local_rank = dist.get_rank()
+        if local_rank == 0:
+            print(*args)
+    except RuntimeError:
+        # Distributed not initialized, assume single GPU
         print(*args)
 
 def logger_setting(save_dir=None):
@@ -39,13 +43,14 @@ def logger_setting(save_dir=None):
         
 def log(*args):
     global root_logger
-    local_rank = dist.get_rank()
-    if local_rank == 0:
+    try:
+        local_rank = dist.get_rank()
+        if local_rank == 0:
+            root_logger.info(*args)
+    except RuntimeError:
+        # Distributed not initialized, assume single GPU
         root_logger.info(*args)
 
-
-
-        
 def log_trainable_params(model):
     total_params = sum(p.numel() for p in model.parameters())
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
