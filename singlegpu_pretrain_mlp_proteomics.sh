@@ -25,12 +25,14 @@ WEIGHT_DECAY=0.0
 WARMUP_RATIO=0.03
 SAVE_STEPS=2500              
 
-echo "🚀 Starting Optimized Single-GPU Proteomics Pretraining..."
-echo "💻 Using all TinyLLaVA optimizations for maximum speed"
-echo "📊 Data: $DATA_PATH"
-echo "🔬 Proteomics CSVs: $PROTEOMICS_DATA_PATH"
-echo "📁 Output: $OUTPUT_DIR"
-echo "💾 Effective batch size: $((PER_DEVICE_BATCH_SIZE * GRAD_ACCUM_STEPS))"
+
+echo "Proteomics Pretraining..."
+echo "Model: $LLM_VERSION (LLM FROZEN for pretraining)"
+echo "Data: $DATA_PATH"
+echo "Proteomics: $PROTEOMICS_DATA_PATH"
+echo "Output: $OUTPUT_DIR"
+echo "Effective batch size: $((PER_DEVICE_BATCH_SIZE * GRAD_ACCUM_STEPS * 2))"
+echo "Training only MLP tower + connector"
 
 python -m tinyllava.train.train \
     --model_name_or_path $LLM_VERSION \
@@ -74,7 +76,6 @@ python -m tinyllava.train.train \
     --tune_type_vision_tower full \
     --tune_type_connector full \
     --attn_implementation flash_attention_2 \
-
-echo "✅ Optimized pretraining completed!"
-echo "📈 Check tensorboard logs: tensorboard --logdir $OUTPUT_DIR"
-echo "📁 Model saved to: $OUTPUT_DIR"
+    
+echo "tensorboard logs: tensorboard --logdir $OUTPUT_DIR"
+echo "Pretrained model saved to: $OUTPUT_DIR"

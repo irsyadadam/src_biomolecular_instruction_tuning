@@ -77,7 +77,7 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29501 tinyllava/train/trai
     --optim adamw_torch \
     --adam_beta1 0.9 \
     --adam_beta2 0.95 \
-    --max_grad_norm 1.0 \
+
 
 echo "tensorboard logs: tensorboard --logdir $OUTPUT_DIR"
 echo "Pretrained model saved to: $OUTPUT_DIR"
