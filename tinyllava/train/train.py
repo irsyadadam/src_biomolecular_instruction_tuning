@@ -71,10 +71,10 @@ def train():
         model_config.mlp_dropout = getattr(data_arguments, 'mlp_dropout', 0.3)
         
         print(f"Proteomics config:")
-        print(f"  - proteomics_mode: {model_config.proteomics_mode}")
-        print(f"  - num_proteins: {model_config.num_proteins}")
-        print(f"  - proteomics_data_path: {model_config.proteomics_data_path}")
-        print(f"  - mlp_tower_type: {model_config.mlp_tower_type}")
+        print(f"\tproteomics_mode: {model_config.proteomics_mode}")
+        print(f"\tnum_proteins: {model_config.num_proteins}")
+        print(f"\tproteomics_data_path: {model_config.proteomics_data_path}")
+        print(f"\tmlp_tower_type: {model_config.mlp_tower_type}")
     
     model = TinyLlavaForConditionalGeneration(model_config)
     

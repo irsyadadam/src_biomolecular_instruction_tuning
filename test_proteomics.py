@@ -3,134 +3,116 @@ import os
 from transformers import AutoTokenizer
 from tinyllava.model.modeling_tinyllava import TinyLlavaForConditionalGeneration
 from tinyllava.model.configuration_tinyllava import TinyLlavaConfig
-from tinyllava.utils.constants import IMAGE_TOKEN_INDEX
 from tinyllava.data.template.base import Template
 from tinyllava.data.dataset_proteomics import ProteinPreprocess
 from tinyllava.utils.arguments import DataArguments
 
-def load_deepspeed_checkpoint(checkpoint_dir = "/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/pretrain"):
-    """Convert DeepSpeed checkpoint to standard model"""
-    from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
+def load_model(checkpoint_path):
+    """Load proteomics model from LoRA checkpoint"""
+    print(f"Loading model from: {checkpoint_path}")
     
-    checkpoints = [d for d in os.listdir(checkpoint_dir) if d.startswith('checkpoint-')]
-    if not checkpoints:
-        raise FileNotFoundError("No DeepSpeed checkpoints found")
-    
-    latest_checkpoint = max(checkpoints, key=lambda x: int(x.split('-')[1]))
-    checkpoint_path = os.path.join(checkpoint_dir, latest_checkpoint)
-    
-    print(f"Loading DeepSpeed checkpoint: {latest_checkpoint}")
-    return load_state_dict_from_zero_checkpoint(checkpoint_path)
-
-def load_proteomics_model(model_path):
-    """Load proteomics model with DeepSpeed support"""
-    print(f"Loading model from: {model_path}")
-    
-    config = TinyLlavaConfig.from_pretrained(model_path)
-    
-    if not getattr(config, 'proteomics_mode', False):
-        config.proteomics_mode = True
-        config.num_proteins = 4792
-        config.mlp_tower_type = 'mlp_3'
-        config.mlp_hidden_size = 256
-        config.mlp_dropout = 0.3
-        config.proteomics_data_path = "../biomolecule_instruction_tuning/data/filtered_proteomics/"
-    
+    # Load config and create base model
+    config = TinyLlavaConfig.from_pretrained(checkpoint_path)
     model = TinyLlavaForConditionalGeneration(config)
     
-    if os.path.exists(os.path.join(model_path, "pytorch_model.bin")):
-        state_dict = torch.load(os.path.join(model_path, "pytorch_model.bin"), map_location='cpu')
-    else:
-        state_dict = load_deepspeed_checkpoint(model_path)
+    # Load base components
+    model.load_llm(model_name_or_path=config.llm_model_name_or_path)
+    model.load_vision_tower(model_name_or_path=config.vision_model_name_or_path)
+    model.load_connector(pretrained_connector_path=os.path.join(checkpoint_path, 'connector'))
     
-    model.load_state_dict(state_dict, strict=False)
+    # Load LoRA adapter
+    from peft import PeftModel
+    print("Loading LoRA weights...")
+    model = PeftModel.from_pretrained(model, checkpoint_path)
+    print("Merging LoRA weights...")
+    model = model.merge_and_unload()
     
-    tokenizer = AutoTokenizer.from_pretrained(
-        config.llm_model_name_or_path,
-        use_fast=False,
-        padding_side='right'
-    )
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.unk_token
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
     
     model.eval()
-    print(f"✅ Model loaded - Proteomics mode: {config.proteomics_mode}")
+    print(f"Model loaded - Proteomics mode: {config.proteomics_mode}")
     return model, tokenizer, config
 
-def test_proteomics_model(model_path, sample_id, question):
-    """Test proteomics model inference"""
-    model, tokenizer, config = load_proteomics_model(model_path)
-    
+def test_inference(model, tokenizer, config, sample_id, question):
+    """Run inference on a single sample"""
+    # Load proteomics data
     data_args = DataArguments()
-    data_args.proteomics_data_path = getattr(config, 'proteomics_data_path', 
-                                             "../biomolecule_instruction_tuning/data/filtered_proteomics/")
-    data_args.num_proteins = getattr(config, 'num_proteins', 4792)
+    data_args.proteomics_data_path = config.proteomics_data_path
+    data_args.num_proteins = config.num_proteins
     
     protein_processor = ProteinPreprocess(data_args)
-    proteomics_tensor = protein_processor(sample_id).unsqueeze(0).float()
+    proteomics_data = protein_processor(sample_id).unsqueeze(0).float()
     
-    if proteomics_tensor.sum() == 0:
-        return f"No proteomics data found for sample {sample_id}"
+    print(f"Proteomics data shape: {proteomics_data.shape}, sum: {proteomics_data.sum():.2f}")
     
+    if proteomics_data.sum() == 0:
+        return f"No data found for {sample_id}"
+    
+    # Prepare input
     input_text = f"<image>\n{question}"
-    input_tokens = Template.tokenizer_image_token(input_text, tokenizer, return_tensors='pt')
+    input_ids = Template.tokenizer_image_token(input_text, tokenizer, return_tensors='pt')
+    if input_ids.dim() == 1:
+        input_ids = input_ids.unsqueeze(0)
     
-    if input_tokens.dim() == 1:
-        input_tokens = input_tokens.unsqueeze(0)
+    print(f"Input shape: {input_ids.shape}, tokens: {input_ids[0][:10].tolist()}...")
     
-    device = next(model.parameters()).device
-    input_tokens = input_tokens.to(device)
-    proteomics_tensor = proteomics_tensor.to(device)
-    
+    # Generate response with better settings
     with torch.no_grad():
         outputs = model.generate(
-            inputs=input_tokens,
-            images=proteomics_tensor,
-            max_new_tokens=128,
-            temperature=0.1,
-            do_sample=False,
-            repetition_penalty=1.2,
-            pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+            inputs=input_ids,
+            images=proteomics_data,
+            max_new_tokens=50,
+            do_sample=True,
+            temperature=0.7,
+            pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
         )
     
-    input_length = input_tokens.shape[-1]
-    new_tokens = outputs[0][input_length:]
-    response = tokenizer.decode(new_tokens, skip_special_tokens=True)
+    print(f"Output shape: {outputs.shape}")
+    print(f"Full output tokens: {outputs[0].tolist()}")
     
-    return response.strip()
+    # Decode full output for debugging
+    full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)    
+    print(f"Full response: '{full_response}'")
+
 
 def run_tests():
-    """Run proteomics model tests"""
-    model_path = "/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/pretrain"
+    """Run all tests"""
+    model_path = "/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/finetune"
+    
+    # Load model once
+    model, tokenizer, config = load_model(model_path)
+    
+    print(f"Model config:")
+    print(f"\tProteomics mode: {getattr(config, 'proteomics_mode', False)}")
+    print(f"\tNum proteins: {getattr(config, 'num_proteins', 'unknown')}")
+    print(f"\tMLP tower type: {getattr(config, 'mlp_tower_type', 'unknown')}")
+    print(f"\tVision tower: {getattr(config, 'vision_model_name_or_path', 'unknown')}")
+    print(f"\tVocab size: {getattr(config, 'vocab_size', 'unknown')}")
+    print(f"\tPad token: {tokenizer.pad_token} (id: {tokenizer.pad_token_id})")
+    print(f"\tEOS token: {tokenizer.eos_token} (id: {tokenizer.eos_token_id})")
     
     test_cases = [
-        ("C3L-00104_tumor", "Analyze the proteomics data to infer the patient's prognosis.", "survival"),
-        ("C3L-00104_tumor", "Determine the tumor size utilizing the provided pattern of protein expression.", "size"),
-        ("C3L-00104_tumor", "Based on the protein expression profile, what is the histologic grade indicated by this molecular signature?", "grade"),
-        ("C3L-00365_tumor", "Utilizing the proteomics profile of this patient, identify the corresponding tumor classification.", "classification"),
-        ("C3L-00104_tumor", "Considering the molecular profile of this patient, would administering adjuvant radiation therapy be warranted?", "treatment"),
+        ("C3L-00104_tumor", "Analyze the proteomics data to infer the patient's prognosis."),
+        ("C3L-00104_tumor", "What is the tumor size?"),
+        ("C3L-00365_tumor", "What is the tumor classification?"),
     ]
     
-    print("🧬 Testing PPI-graph LLM for Proteomics")
-    print("=" * 50)
+    print("\nTesting PPI-graph LLM for Proteomics")
+    print("=" * 60)
     
-    results = []
-    for i, (sample_id, question, expected_type) in enumerate(test_cases):
-        print(f"\n[{i+1}/{len(test_cases)}] {sample_id} - {expected_type}")
+    for i, (sample_id, question) in enumerate(test_cases, 1):
+        print(f"\n[{i}] Sample: {sample_id}")
+        print(f"Q: {question}")
         
         try:
-            output = test_proteomics_model(model_path, sample_id, question)
-            print(f"Q: {question}")
-            print(f"A: {output}")
-            results.append({"status": "success", "output": output})
+            response = test_inference(model, tokenizer, config, sample_id, question)
+            print(f"A: {response}")
         except Exception as e:
-            print(f"❌ Error: {e}")
-            results.append({"status": "failed", "error": str(e)})
-    
-    successful = sum(1 for r in results if r["status"] == "success")
-    print(f"\n✅ Results: {successful}/{len(test_cases)} successful")
-    return results
+            print(f"Error: {e}")
+            import traceback
+            traceback.print_exc()
 
 if __name__ == "__main__":
     run_tests()

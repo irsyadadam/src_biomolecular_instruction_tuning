@@ -79,7 +79,7 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29502 tinyllava/train/trai
     --lazy_preprocess True \
     --report_to tensorboard \
     --remove_unused_columns False \
-    --group_by_modality_length True \
+    --group_by_modality_length False \
     --training_recipe qlora_int8 \
     --tune_type_llm qlora \
     --tune_type_vision_tower frozen \
