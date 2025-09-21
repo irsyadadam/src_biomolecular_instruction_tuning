@@ -256,31 +256,34 @@ class NodeTower(nn.Module):
         if not self.is_loaded:
             self.load_model()
         
-        # Handle single sample ID
+        # Handle input types
         if isinstance(sample_ids, str):
             sample_ids = [sample_ids]
         elif isinstance(sample_ids, torch.Tensor):
-            # Convert tensor of sample IDs to list
             sample_ids = [str(sid) for sid in sample_ids.tolist()]
+        elif isinstance(sample_ids, list):
+            sample_ids = [str(sid) for sid in sample_ids]
+        elif sample_ids is None:
+            return torch.zeros(1, 1, self.hidden_size, device=self.device, dtype=self.dtype)
         
         # Get node indices
         node_indices = []
         for sample_id in sample_ids:
             if sample_id not in self.sample_id_to_node_idx:
-                print(f"ERROR: Sample ID {sample_id} not found in graph")
-                sys.exit(1)
+                print(f"WARNING: Sample ID {sample_id} not found in graph")
+                return torch.zeros(len(sample_ids), 1, self.hidden_size, device=self.device, dtype=self.dtype)
             node_indices.append(self.sample_id_to_node_idx[sample_id])
         
         # Move graph to device
         if self.graph_data.x.device != self.device:
             self.graph_data = self.graph_data.to(self.device)
         
-        # Forward through GNN to get all node embeddings
+        # Forward through GNN - convert inputs to float32 to match model parameters
         with torch.set_grad_enabled(self.training):
             all_node_embeddings = self.node_encoder(
-                self.graph_data.x,
+                self.graph_data.x.float(),  # Convert input to float32
                 self.graph_data.edge_index,
-                self.graph_data.edge_attr
+                self.graph_data.edge_attr.float() if self.graph_data.edge_attr is not None else None
             )
         
         # Extract embeddings for requested samples

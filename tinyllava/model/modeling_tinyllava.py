@@ -385,16 +385,19 @@ class TinyLlavaForConditionalGeneration(TinyLlavaPreTrainedModel):
     def load_connector(self, **kwargs):
         self.connector.load_model(**kwargs)
 
-        # Add these methods to the TinyLlavaForConditionalGeneration class
 
     def encode_proteomics(self, proteomics_data):
-        """Encode proteomics data through MLP tower"""
         kwargs = {}
         kwargs['vision_feature_layer'] = self.config.vision_feature_layer
         kwargs['vision_feature_select_strategy'] = self.config.vision_feature_select_strategy
         
-        proteomics_data = proteomics_data.to(device=self.device, dtype=self.dtype)
-        proteomics_features = self.vision_tower(proteomics_data, **kwargs)
+        # Handle different types of proteomics data
+        if isinstance(proteomics_data, list):
+            proteomics_features = self.vision_tower(proteomics_data, **kwargs)
+        else:
+            proteomics_data = proteomics_data.to(device=self.device, dtype=self.dtype)
+            proteomics_features = self.vision_tower(proteomics_data, **kwargs)
+        
         proteomics_features = self.connector(proteomics_features)
         return proteomics_features
 

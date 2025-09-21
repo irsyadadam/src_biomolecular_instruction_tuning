@@ -63,7 +63,10 @@ def train():
         model_config.proteomics_mode = data_arguments.proteomics_mode
         model_config.num_proteins = getattr(data_arguments, 'num_proteins', 4792)
         model_config.proteomics_data_path = getattr(data_arguments, 'proteomics_data_path', None)
-        
+
+        #Let dataloader know how to feed data
+        data_arguments.vision_tower = model_arguments.vision_tower
+
         # Set tower-specific configs based on which tower is actually being used
         if model_arguments.vision_tower == 'mlp':
             model_config.mlp_tower_type = getattr(data_arguments, 'mlp_tower_type', 'mlp_3')

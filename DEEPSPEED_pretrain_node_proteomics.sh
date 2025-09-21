@@ -74,7 +74,7 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29501 tinyllava/train/trai
     --warmup_ratio $WARMUP_RATIO \
     --lr_scheduler_type "cosine" \
     --logging_steps 25 \
-    --bf16 True \
+    --fp16 True \
     --tf32 True \
     --model_max_length $MODEL_MAX_LENGTH \
     --gradient_checkpointing True \
