@@ -133,13 +133,6 @@ class NodeTower(nn.Module):
             self.k_neighbors = getattr(node_tower_cfg, 'k_neighbors', 7)
             self.proteomics_data_path = getattr(node_tower_cfg, 'proteomics_data_path', None)
         
-        # Debug print to see what's being passed
-        print(f"NodeTower config debug:")
-        print(f"  Config type: {type(node_tower_cfg)}")
-        print(f"  Config attributes: {dir(node_tower_cfg) if hasattr(node_tower_cfg, '__dict__') else 'No __dict__'}")
-        print(f"  node_tower_name: {self.node_tower_name}")
-        print(f"  proteomics_data_path: {self.proteomics_data_path}")
-        
         self.graph_data = None
         self.sample_id_to_node_idx = {}
         

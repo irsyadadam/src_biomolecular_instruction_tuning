@@ -10,7 +10,7 @@ CUDA_GPU="0,4"
 # Data Paths
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_finetune_conversations.json"
 PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
-PRETRAINED_MODEL_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/node_llm/pretrain"
+PRETRAINED_MODEL_PATH="../biomolecular_instruction_tuning_data/node_llm/pretrain"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/node_llm/finetune"
 
 # Model Configuration

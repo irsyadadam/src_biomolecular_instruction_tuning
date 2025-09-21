@@ -200,7 +200,7 @@ class TinyLlavaConfig(PretrainedConfig):
     
     def _load_vision_config(self, vision_config=None):
         # Handle proteomics mode with MLP tower
-        if self.proteomics_mode or self.vision_model_name_or_path == 'mlp':
+        if self.vision_model_name_or_path == 'mlp':
             self.vision_config = MLPConfig(
                 model_name_or_path='mlp',
                 model_name_or_path2='',

@@ -49,7 +49,6 @@ def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments))
     model_arguments, data_arguments, training_arguments = parser.parse_args_into_dataclasses()
-    
     logger_setting(getattr(training_arguments, 'output_dir', None))
 
     training_recipe = TrainingRecipeFactory(training_arguments.training_recipe)(training_arguments) 
@@ -57,24 +56,27 @@ def train():
     model_args = load_settings(model_arguments, data_arguments, training_arguments)
     model_args = training_recipe.add_args(model_args)
     
-    # CRITICAL FIX: Create config with proteomics settings
     model_config = TinyLlavaConfig()
     model_config.load_from_config(model_arguments)
     
-    # EXPLICITLY SET PROTEOMICS CONFIG FROM DATA_ARGUMENTS
     if getattr(data_arguments, 'proteomics_mode', False):
         model_config.proteomics_mode = data_arguments.proteomics_mode
         model_config.num_proteins = getattr(data_arguments, 'num_proteins', 4792)
         model_config.proteomics_data_path = getattr(data_arguments, 'proteomics_data_path', None)
-        model_config.mlp_tower_type = getattr(data_arguments, 'mlp_tower_type', 'mlp_3')
-        model_config.mlp_hidden_size = getattr(data_arguments, 'mlp_hidden_size', 256)
-        model_config.mlp_dropout = getattr(data_arguments, 'mlp_dropout', 0.3)
         
-        print(f"Proteomics config:")
-        print(f"\tproteomics_mode: {model_config.proteomics_mode}")
-        print(f"\tnum_proteins: {model_config.num_proteins}")
-        print(f"\tproteomics_data_path: {model_config.proteomics_data_path}")
-        print(f"\tmlp_tower_type: {model_config.mlp_tower_type}")
+        # Set tower-specific configs based on which tower is actually being used
+        if model_arguments.vision_tower == 'mlp':
+            model_config.mlp_tower_type = getattr(data_arguments, 'mlp_tower_type', 'mlp_3')
+            model_config.mlp_hidden_size = getattr(data_arguments, 'mlp_hidden_size', 256)
+            model_config.mlp_dropout = getattr(data_arguments, 'mlp_dropout', 0.3)
+        elif model_arguments.vision_tower == 'node_encoder':
+            model_config.node_tower_type = getattr(data_arguments, 'node_tower_type', 'gcn')
+            model_config.node_hidden_size = getattr(data_arguments, 'node_hidden_size', 512)
+            model_config.node_dropout = getattr(data_arguments, 'node_dropout', 0.3)
+            model_config.k_neighbors = getattr(data_arguments, 'k_neighbors', 7)
+        
+        # Reload vision config with updated proteomics_data_path
+        model_config._load_vision_config()
     
     model = TinyLlavaForConditionalGeneration(model_config)
     

@@ -29,6 +29,9 @@ class MLPVisionTower(VisionTower):
             proteomics_features = proteomics_features.unsqueeze(1)  # [batch_size, 1, hidden_size]
         
         return proteomics_features
+    
+    def load_model(self, vision_tower_name, **kwargs):
+        print(f"MLP tower already initialized in __init__: {vision_tower_name}")
 
     def _load_model(self, vision_tower_name, **kwargs):
         """Override the base class load method since MLP doesn't need pretrained weights"""

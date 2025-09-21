@@ -31,6 +31,9 @@ class NodeVisionTower(VisionTower):
         
         return node_embeddings
 
+    def load_model(self, vision_tower_name, **kwargs):
+        print(f"NodeTower already initialized in __init__: {vision_tower_name}")
+
     def _load_model(self, vision_tower_name, **kwargs):
         # Node tower handles its own initialization
         print(f"Initializing node tower: {vision_tower_name}")
