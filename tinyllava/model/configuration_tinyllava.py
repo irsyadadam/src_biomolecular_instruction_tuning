@@ -26,6 +26,35 @@ class MLPConfig(PretrainedConfig):
         self.mlp_tower_type = mlp_tower_type
         self.dropout = dropout
 
+
+class NodeConfig(PretrainedConfig):
+    """Configuration for Node Vision Tower"""
+    
+    model_type = "node_encoder"
+    
+    def __init__(
+        self,
+        model_name_or_path: str = "node_encoder",
+        model_name_or_path2: str = "",
+        hidden_size: int = 512,
+        num_proteins: int = 4792,
+        node_tower_type: str = "gcn",
+        dropout: float = 0.3,
+        k_neighbors: int = 7,
+        proteomics_data_path: str = None,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.model_name_or_path = model_name_or_path
+        self.model_name_or_path2 = model_name_or_path2
+        self.hidden_size = hidden_size
+        self.num_proteins = num_proteins
+        self.node_tower_type = node_tower_type
+        self.dropout = dropout
+        self.k_neighbors = k_neighbors
+        self.proteomics_data_path = proteomics_data_path
+
+
 class TinyLlavaConfig(PretrainedConfig):
 
     model_type = "tinyllava"
@@ -69,6 +98,12 @@ class TinyLlavaConfig(PretrainedConfig):
         mlp_hidden_size = 256,
         mlp_dropout = 0.3,
         
+        # Add node encoder parameters
+        node_tower_type = 'gcn',
+        node_hidden_size = 512,
+        node_dropout = 0.3,
+        k_neighbors = 7,
+        
         **kwargs
 
     ):
@@ -106,6 +141,12 @@ class TinyLlavaConfig(PretrainedConfig):
         self.mlp_hidden_size = mlp_hidden_size
         self.mlp_dropout = mlp_dropout
         
+        # Add node encoder attributes
+        self.node_tower_type = node_tower_type
+        self.node_hidden_size = node_hidden_size
+        self.node_dropout = node_dropout
+        self.k_neighbors = k_neighbors
+        
         self._load_text_config(text_config)
         self._load_vision_config(vision_config)
 
@@ -136,6 +177,11 @@ class TinyLlavaConfig(PretrainedConfig):
         self.mlp_tower_type = getattr(config, 'mlp_tower_type', 'mlp_3')
         self.mlp_hidden_size = getattr(config, 'mlp_hidden_size', 256)
         self.mlp_dropout = getattr(config, 'mlp_dropout', 0.3)
+        
+        self.node_tower_type = getattr(config, 'node_tower_type', 'gcn')
+        self.node_hidden_size = getattr(config, 'node_hidden_size', 512)
+        self.node_dropout = getattr(config, 'node_dropout', 0.3)
+        self.k_neighbors = getattr(config, 'k_neighbors', 7)
                 
         self._load_text_config()
         self._load_vision_config()
@@ -155,7 +201,6 @@ class TinyLlavaConfig(PretrainedConfig):
     def _load_vision_config(self, vision_config=None):
         # Handle proteomics mode with MLP tower
         if self.proteomics_mode or self.vision_model_name_or_path == 'mlp':
-            # Create a proper config for MLP tower that can be JSON serialized
             self.vision_config = MLPConfig(
                 model_name_or_path='mlp',
                 model_name_or_path2='',
@@ -165,6 +210,21 @@ class TinyLlavaConfig(PretrainedConfig):
                 dropout=self.mlp_dropout
             )
             self.vision_hidden_size = self.mlp_hidden_size
+            return
+        
+        # Handle node encoder mode
+        if self.vision_model_name_or_path == 'node_encoder':
+            self.vision_config = NodeConfig(
+                model_name_or_path='node_encoder',
+                model_name_or_path2='',
+                hidden_size=self.node_hidden_size,
+                num_proteins=self.num_proteins,
+                node_tower_type=self.node_tower_type,
+                dropout=self.node_dropout,
+                k_neighbors=self.k_neighbors,
+                proteomics_data_path=self.proteomics_data_path
+            )
+            self.vision_hidden_size = self.node_hidden_size
             return
             
         if self.vision_model_name_or_path is None or self.vision_model_name_or_path == '':

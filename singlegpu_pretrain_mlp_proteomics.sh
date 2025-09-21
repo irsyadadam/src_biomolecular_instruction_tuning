@@ -1,24 +1,19 @@
 #!/bin/bash
 
-# Optimized Single GPU Proteomics Pretraining (48GB GPU)
-# Takes advantage of all TinyLLaVA optimizations
-
 export CUDA_VISIBLE_DEVICES=4
 
-# Paths - UPDATE THESE
+
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
 PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/pretrain"
 
-# Model settings - Vicuna-7B with proteomics
 LLM_VERSION="lmsys/vicuna-7b-v1.5"
-VISION_TOWER="mlp"  # MLP tower for proteomics
+VISION_TOWER="mlp" 
 CONNECTOR_TYPE="mlp2x_gelu"
-CONV_VERSION="llama"  # Vicuna uses LLaMA conversation format
+CONV_VERSION="llama"
 MODEL_MAX_LENGTH=2048
 
-# Optimized training settings for 48GB single GPU
-PER_DEVICE_BATCH_SIZE=128     # Maximize for 48GB
+PER_DEVICE_BATCH_SIZE=128  
 GRAD_ACCUM_STEPS=1           
 LEARNING_RATE=1e-3
 WEIGHT_DECAY=0.0
