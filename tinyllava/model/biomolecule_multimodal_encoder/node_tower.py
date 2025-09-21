@@ -35,6 +35,15 @@ class GCNNodeEncoder(nn.Module):
         self.num_layers = num_layers
         
     def forward(self, x, edge_index, edge_weight=None):
+        # Ensure consistent dtype throughout
+        target_dtype = next(self.parameters()).dtype
+        
+        # Convert inputs to match model dtype
+        if x.dtype != target_dtype:
+            x = x.to(target_dtype)
+        if edge_weight is not None and edge_weight.dtype != target_dtype:
+            edge_weight = edge_weight.to(target_dtype)
+            
         for i in range(self.num_layers):
             x = self.convs[i](x, edge_index, edge_weight)
             x = self.batch_norms[i](x)
@@ -67,6 +76,13 @@ class GATNodeEncoder(nn.Module):
         self.num_layers = num_layers
         
     def forward(self, x, edge_index, edge_weight=None):
+        # Ensure consistent dtype throughout
+        target_dtype = next(self.parameters()).dtype
+        
+        # Convert inputs to match model dtype
+        if x.dtype != target_dtype:
+            x = x.to(target_dtype)
+            
         for i in range(self.num_layers):
             x = self.convs[i](x, edge_index)
             x = self.batch_norms[i](x)
@@ -99,6 +115,15 @@ class SAGENodeEncoder(nn.Module):
         self.num_layers = num_layers
         
     def forward(self, x, edge_index, edge_weight=None):
+        # Ensure consistent dtype throughout
+        target_dtype = next(self.parameters()).dtype
+        
+        # Convert inputs to match model dtype
+        if x.dtype != target_dtype:
+            x = x.to(target_dtype)
+        if edge_weight is not None and edge_weight.dtype != target_dtype:
+            edge_weight = edge_weight.to(target_dtype)
+            
         for i in range(self.num_layers):
             x = self.convs[i](x, edge_index)
             x = self.batch_norms[i](x)
@@ -274,16 +299,23 @@ class NodeTower(nn.Module):
                 return torch.zeros(len(sample_ids), 1, self.hidden_size, device=self.device, dtype=self.dtype)
             node_indices.append(self.sample_id_to_node_idx[sample_id])
         
-        # Move graph to device
+        # Move graph to device and ensure dtype consistency
         if self.graph_data.x.device != self.device:
             self.graph_data = self.graph_data.to(self.device)
         
-        # Forward through GNN - convert inputs to float32 to match model parameters
+        # Forward through GNN - ensure dtype consistency
         with torch.set_grad_enabled(self.training):
+            # Get target dtype from model parameters
+            target_dtype = next(self.node_encoder.parameters()).dtype
+            
+            # Convert graph data to match model dtype
+            graph_x = self.graph_data.x.to(target_dtype)
+            graph_edge_attr = self.graph_data.edge_attr.to(target_dtype) if self.graph_data.edge_attr is not None else None
+            
             all_node_embeddings = self.node_encoder(
-                self.graph_data.x.float(),  # Convert input to float32
+                graph_x,
                 self.graph_data.edge_index,
-                self.graph_data.edge_attr.float() if self.graph_data.edge_attr is not None else None
+                graph_edge_attr
             )
         
         # Extract embeddings for requested samples
