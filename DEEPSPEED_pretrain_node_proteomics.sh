@@ -4,11 +4,11 @@
 export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
 
 # GPU Configuration
-CUDA_GPU="0,4"
+CUDA_GPU="0,1"
 
 # Data Paths
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
-PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
+PROTEOMICS_DATA_PATH="/home/irsyadadam/biomolecule_instruction_tuning/data/filtered_proteomics/"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/node_llm/pretrain"
 
 # Model Configuration
@@ -46,25 +46,21 @@ echo "Training only Node Encoder + connector"
 
 deepspeed --include localhost:$CUDA_GPU --master_port 29501 tinyllava/train/train.py \
     --deepspeed ./scripts/zero2.json \
-    \
     --data_path $DATA_PATH \
     --proteomics_data_path $PROTEOMICS_DATA_PATH \
     --conv_version $CONV_VERSION \
-    \
     --model_name_or_path $LLM_VERSION \
     --vision_tower $VISION_TOWER \
     --connector_type $CONNECTOR_TYPE \
     --mm_vision_select_layer -2 \
     --image_aspect_ratio square \
     --attn_implementation flash_attention_2 \
-    \
     --proteomics_mode True \
     --num_proteins $NUM_PROTEINS \
     --node_tower_type $NODE_TOWER_TYPE \
     --node_hidden_size $NODE_HIDDEN_SIZE \
     --node_dropout $NODE_DROPOUT \
     --k_neighbors $K_NEIGHBORS \
-    \
     --output_dir $OUTPUT_DIR \
     --num_train_epochs 1 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
@@ -90,7 +86,6 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29501 tinyllava/train/trai
     --report_to tensorboard \
     --remove_unused_columns False \
     --group_by_modality_length False \
-    \
     --training_recipe common \
     --tune_type_llm frozen \
     --tune_type_vision_tower full \
