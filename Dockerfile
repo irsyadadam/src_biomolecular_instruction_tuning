@@ -1,4 +1,3 @@
-# Use CUDA development image that includes nvcc and development tools
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 # Set environment variables
@@ -11,7 +10,6 @@ ENV LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
 
 WORKDIR /workspace
 
-# Install system dependencies including Python 3.10
 RUN apt-get update && apt-get install -y \
     python3.10 \
     python3.10-dev \
@@ -43,6 +41,8 @@ RUN python3.10 -m pip install -e .
 
 # Install flash-attention (should work now with CUDA development tools)
 RUN python3.10 -m pip install flash-attn==2.5.7 --no-build-isolation
+RUN python3.10 -m pip install torch-geometric==2.3.1
+RUN python3.10 -m pip install torch-scatter torch-sparse torch-cluster torch-spline-conv -f https://data.pyg.org/whl/torch-2.0.0+cu118.html
 
 # Expose ports
 EXPOSE 8888 6006 22

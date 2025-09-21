@@ -80,6 +80,8 @@ pip install -e .
 3. Install additional packages
 ```Shell
 pip install flash-attn==2.5.7 --no-build-isolation
+pip install torch-geometric==2.3.1
+pip install torch-scatter torch-sparse torch-cluster torch-spline-conv -f https://data.pyg.org/whl/torch-2.0.0+cu118.html
 ```
 #### Upgrade to the latest code base
 
