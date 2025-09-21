@@ -5,12 +5,12 @@
 export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
 
 # GPU Configuration
-CUDA_GPU="0,4"
+CUDA_GPU="0,1"
 
 # Data Paths
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_finetune_conversations.json"
-PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
-PRETRAINED_MODEL_PATH="../biomolecular_instruction_tuning_data/node_llm/pretrain"
+PROTEOMICS_DATA_PATH="/home/irsyadadam/biomolecule_instruction_tuning/data/filtered_proteomics/"
+PRETRAINED_MODEL_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/node_llm/pretrain"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/node_llm/finetune"
 
 # Model Configuration
@@ -21,7 +21,7 @@ CONV_VERSION="llama"
 MODEL_MAX_LENGTH=2048
 
 # Node Encoder Configuration
-NODE_TOWER_TYPE="gcn"
+NODE_TOWER_TYPE="gat"
 NODE_HIDDEN_SIZE=512
 NODE_DROPOUT=0.3
 K_NEIGHBORS=7
@@ -30,7 +30,7 @@ K_NEIGHBORS=7
 NUM_PROTEINS=4792
 
 # QLoRA Training Hyperparameters
-PER_DEVICE_BATCH_SIZE=160
+PER_DEVICE_BATCH_SIZE=100
 GRAD_ACCUM_STEPS=1           
 LEARNING_RATE=3e-4
 WEIGHT_DECAY=0.01            
@@ -53,28 +53,24 @@ echo "QLoRA: 8-bit quantization + LoRA adapters"
 
 deepspeed --include localhost:$CUDA_GPU --master_port 29502 tinyllava/train/train.py \
     --deepspeed ./scripts/zero2.json \
-    \
     --data_path $DATA_PATH \
     --proteomics_data_path $PROTEOMICS_DATA_PATH \
     --conv_version $CONV_VERSION \
-    \
     --model_name_or_path $LLM_VERSION \
     --vision_tower $VISION_TOWER \
     --connector_type $CONNECTOR_TYPE \
     --mm_vision_select_layer -2 \
     --image_aspect_ratio square \
     --attn_implementation flash_attention_2 \
-    \
     --proteomics_mode True \
     --num_proteins $NUM_PROTEINS \
     --node_tower_type $NODE_TOWER_TYPE \
     --node_hidden_size $NODE_HIDDEN_SIZE \
     --node_dropout $NODE_DROPOUT \
     --k_neighbors $K_NEIGHBORS \
-    \
     --pretrained_model_path $PRETRAINED_MODEL_PATH \
     --output_dir $OUTPUT_DIR \
-    --num_train_epochs 1 \
+    --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --gradient_accumulation_steps $GRAD_ACCUM_STEPS \
     --evaluation_strategy "no" \
@@ -86,7 +82,7 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29502 tinyllava/train/trai
     --warmup_ratio $WARMUP_RATIO \
     --lr_scheduler_type "cosine" \
     --logging_steps 25 \
-    --bf16 True \
+    --fp16 True \
     --tf32 True \
     --model_max_length $MODEL_MAX_LENGTH \
     --gradient_checkpointing True \
@@ -98,7 +94,6 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29502 tinyllava/train/trai
     --report_to tensorboard \
     --remove_unused_columns False \
     --group_by_modality_length False \
-    \
     --training_recipe qlora_int8 \
     --tune_type_llm qlora \
     --tune_type_vision_tower frozen \
