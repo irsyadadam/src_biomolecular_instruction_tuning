@@ -1,0 +1,17 @@
+Protein Selection Overlap Analysis
+========================================
+
+Curated Central: 42 proteins
+
+Curated Variable: 38 proteins
+
+Central Variable: 58 proteins
+
+All Three: 6 proteins
+  DDX10
+  EIF4G1
+  EIF5B
+  ENO1
+  RPL10
+  RPS6
+
