@@ -4,10 +4,10 @@ export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tu
 
 CUDA_GPU="0,4"
 
-DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_finetune_conversations.json"
-PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
-PRETRAINED_MODEL_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/pretrain"
-OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/finetune"
+DATA_PATH="/path/to/data/proteomics_finetune_conversations.json"
+PROTEOMICS_DATA_PATH="/path/to/filtered_proteomics/"
+PRETRAINED_MODEL_PATH="/path/to/mlp_llm/pretrain"
+OUTPUT_DIR="/path/to/mlp_llm/finetune"
 
 LLM_VERSION="lmsys/vicuna-7b-v1.5"
 VISION_TOWER="mlp"

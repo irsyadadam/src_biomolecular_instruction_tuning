@@ -7,9 +7,9 @@ export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tu
 CUDA_GPU="0,1"
 
 # Data Paths
-DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
-PROTEOMICS_DATA_PATH="/home/irsyadadam/biomolecule_instruction_tuning/data/filtered_proteomics/"
-OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/node_llm/pretrain"
+DATA_PATH="/path/to/data/proteomics_finetune_conversations.json"
+PROTEOMICS_DATA_PATH="/path/to/filtered_proteomics/"
+OUTPUT_DIR="/path/to/node_llm/pretrain"
 
 # Model Configuration
 LLM_VERSION="lmsys/vicuna-7b-v1.5"
