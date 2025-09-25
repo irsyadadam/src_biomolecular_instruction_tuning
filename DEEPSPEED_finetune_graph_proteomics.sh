@@ -1,7 +1,7 @@
 #!/bin/bash
 # DEEPSPEED_finetune_graph_proteomics.sh
 
-export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
+export PYTHONPATH="${PYTHONPATH}:/home/src_biomolecule_instruction_tuning"
 
 CUDA_GPU="0,1"
 
