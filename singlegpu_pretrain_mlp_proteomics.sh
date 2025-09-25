@@ -2,7 +2,6 @@
 
 export CUDA_VISIBLE_DEVICES=4
 
-
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
 PROTEOMICS_DATA_PATH="../biomolecule_instruction_tuning/data/filtered_proteomics/"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/mlp_llm/pretrain"
@@ -19,7 +18,6 @@ LEARNING_RATE=1e-3
 WEIGHT_DECAY=0.0
 WARMUP_RATIO=0.03
 SAVE_STEPS=2500              
-
 
 echo "Proteomics Pretraining..."
 echo "Model: $LLM_VERSION (LLM FROZEN for pretraining)"

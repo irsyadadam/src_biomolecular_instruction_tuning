@@ -54,7 +54,29 @@ class NodeConfig(PretrainedConfig):
         self.k_neighbors = k_neighbors
         self.proteomics_data_path = proteomics_data_path
 
-
+class GraphConfig(PretrainedConfig):
+    """Configuration for Graph Vision Tower"""
+    
+    model_type = "graph_tower"
+    
+    def __init__(
+        self,
+        model_name_or_path: str = "graph_tower",
+        model_name_or_path2: str = "",
+        hidden_size: int = 512,
+        graph_tower_type: str = "gcn",
+        dropout: float = 0.3,
+        patient_graphs_dir: str = None,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.model_name_or_path = model_name_or_path
+        self.model_name_or_path2 = model_name_or_path2
+        self.hidden_size = hidden_size
+        self.graph_tower_type = graph_tower_type
+        self.dropout = dropout
+        self.patient_graphs_dir = patient_graphs_dir
+        
 class TinyLlavaConfig(PretrainedConfig):
 
     model_type = "tinyllava"
@@ -103,6 +125,11 @@ class TinyLlavaConfig(PretrainedConfig):
         node_hidden_size = 512,
         node_dropout = 0.3,
         k_neighbors = 7,
+
+        graph_tower_type = 'gcn',
+        graph_hidden_size = 512,
+        graph_dropout = 0.3,
+        patient_graphs_dir = None,
         
         **kwargs
 
@@ -146,7 +173,13 @@ class TinyLlavaConfig(PretrainedConfig):
         self.node_hidden_size = node_hidden_size
         self.node_dropout = node_dropout
         self.k_neighbors = k_neighbors
-        
+
+        # Graph encoder parameters
+        self.graph_tower_type = graph_tower_type
+        self.graph_hidden_size = graph_hidden_size
+        self.graph_dropout = graph_dropout
+        self.patient_graphs_dir = patient_graphs_dir
+            
         self._load_text_config(text_config)
         self._load_vision_config(vision_config)
 
@@ -182,6 +215,11 @@ class TinyLlavaConfig(PretrainedConfig):
         self.node_hidden_size = getattr(config, 'node_hidden_size', 512)
         self.node_dropout = getattr(config, 'node_dropout', 0.3)
         self.k_neighbors = getattr(config, 'k_neighbors', 7)
+
+        self.graph_tower_type = getattr(config, 'graph_tower_type', 'gcn')
+        self.graph_hidden_size = getattr(config, 'graph_hidden_size', 512)
+        self.graph_dropout = getattr(config, 'graph_dropout', 0.3)
+        self.patient_graphs_dir = getattr(config, 'patient_graphs_dir', None)
                 
         self._load_text_config()
         self._load_vision_config()
@@ -226,6 +264,19 @@ class TinyLlavaConfig(PretrainedConfig):
             )
             self.vision_hidden_size = self.node_hidden_size
             return
+        # Handle graph tower mode
+        if self.vision_model_name_or_path == 'graph_tower':
+            self.vision_config = GraphConfig(
+                model_name_or_path='graph_tower',
+                model_name_or_path2='',
+                hidden_size=self.graph_hidden_size,
+                graph_tower_type=self.graph_tower_type,
+                dropout=self.graph_dropout,
+                patient_graphs_dir=self.patient_graphs_dir
+            )
+            self.vision_hidden_size = self.graph_hidden_size
+            return
+
             
         if self.vision_model_name_or_path is None or self.vision_model_name_or_path == '':
             self.vision_config = CONFIG_MAPPING['clip_vision_model'](

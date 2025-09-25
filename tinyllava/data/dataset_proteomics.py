@@ -68,7 +68,12 @@ class LazySupervisedDataset(Dataset):
         self.list_data_dict = list_data_dict
         self.data_args = data_args
         self.text_preprocess = TextPreprocess(tokenizer, data_args.conv_version)
-        self.protein_preprocess = ProteinPreprocess(data_args)
+        vision_tower_type = getattr(data_args, 'vision_tower', 'mlp')
+        if vision_tower_type in ['mlp', 'node_encoder']:
+            self.protein_preprocess = ProteinPreprocess(data_args)
+        #if graph tower
+        else:
+            self.protein_preprocess = None
 
     def __len__(self):
         return len(self.list_data_dict)
@@ -106,20 +111,22 @@ class LazySupervisedDataset(Dataset):
         if 'sample_id' in sources:
             sample_id = sources['sample_id'][0] if isinstance(sources['sample_id'], list) else sources['sample_id']
             
-            # Check which vision tower we're using
             vision_tower_type = getattr(self.data_args, 'vision_tower')
             
-            if vision_tower_type == 'node_encoder':
-                # For node encoder, pass the sample ID directly
-                data_dict['image'] = sample_id  # Keep as string
+            if vision_tower_type == 'graph_tower':
+                data_dict['image'] = sample_id
+            elif vision_tower_type == 'node_encoder':
+                data_dict['image'] = sample_id  
             elif vision_tower_type == 'mlp':
-                # For MLP tower, get the actual proteomics expression data
-                protein_expression = self.protein_preprocess(sample_id)
-                data_dict['image'] = protein_expression
+                if self.protein_preprocess is not None:
+                    protein_expression = self.protein_preprocess(sample_id)
+                    data_dict['image'] = protein_expression
+                else:
+                    data_dict['image'] = torch.zeros(getattr(self.data_args, 'num_proteins', 4792))
                 
         elif self.data_args.is_multimodal:
-            if getattr(self.data_args, 'vision_tower_type', 'mlp') == 'node_encoder':
-                data_dict['image'] = None  # or some default sample ID
+            if getattr(self.data_args, 'vision_tower', 'mlp') in ['node_encoder', 'graph_tower']:
+                data_dict['image'] = None
             else:
                 num_proteins = getattr(self.data_args, 'num_proteins', 4792)
                 data_dict['image'] = torch.zeros(num_proteins)
@@ -127,13 +134,12 @@ class LazySupervisedDataset(Dataset):
         return data_dict
 
 @dataclass
-@dataclass
 class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         input_ids, labels = tuple([instance[key] for instance in instances]
-                                  for key in ("input_ids", "labels"))
+                                for key in ("input_ids", "labels"))
         if self.tokenizer.pad_token_id == self.tokenizer.eos_token_id:
             for input_id in input_ids:
                 input_id[input_id == self.tokenizer.eos_token_id] = -300
@@ -142,8 +148,8 @@ class DataCollatorForSupervisedDataset(object):
             batch_first=True,
             padding_value=self.tokenizer.pad_token_id)
         labels = torch.nn.utils.rnn.pad_sequence(labels,
-                                                 batch_first=True,
-                                                 padding_value=IGNORE_INDEX)
+                                                batch_first=True,
+                                                padding_value=IGNORE_INDEX)
         input_ids = input_ids[:, :self.tokenizer.model_max_length]
         attention_mask = input_ids.ne(self.tokenizer.pad_token_id)
         labels = labels[:, :self.tokenizer.model_max_length]
@@ -161,13 +167,12 @@ class DataCollatorForSupervisedDataset(object):
         if 'image' in instances[0]:
             images = [instance['image'] for instance in instances]
             
-            #Handle different types of images
+            # Handle different types of images/data
             if images and images[0] is not None:
-                # if string (node encoder)
+                # If string (node_encoder or graph_tower)
                 if isinstance(images[0], str):
                     batch['images'] = images
-
-                #if tensor (mlp)
+                # If tensor (mlp)
                 elif isinstance(images[0], torch.Tensor):
                     if all(x is not None and x.shape == images[0].shape for x in images):
                         batch['images'] = torch.stack(images)

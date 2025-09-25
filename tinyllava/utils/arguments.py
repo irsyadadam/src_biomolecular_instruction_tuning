@@ -58,6 +58,12 @@ class DataArguments:
     node_dropout: float = field(default=0.3)
     k_neighbors: int = field(default=7)
 
+    # Graph encoder parameters
+    graph_tower_type: str = field(default='gcn')
+    graph_hidden_size: int = field(default=512)
+    graph_dropout: float = field(default=0.3)
+    patient_graphs_dir: Optional[str] = field(default=None)
+
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):

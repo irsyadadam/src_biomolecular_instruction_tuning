@@ -1,3 +1,3 @@
-CUDA_VISIBLE_DEVICES=0,4
+CUDA_VISIBLE_DEVICES=1
 
 python3 test_proteomics.py

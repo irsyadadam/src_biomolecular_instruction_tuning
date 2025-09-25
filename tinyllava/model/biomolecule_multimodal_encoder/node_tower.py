@@ -8,7 +8,7 @@ import glob
 import os
 import sys
 from torch_geometric.data import Data
-from torch_geometric.nn import GCNConv, GATConv, SAGEConv
+from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -133,6 +133,58 @@ class SAGENodeEncoder(nn.Module):
         return x
 
 
+class GINNodeEncoder(nn.Module):
+    def __init__(self, input_dim, hidden_dim=512, num_layers=3, dropout=0.3):
+        super().__init__()
+        self.convs = nn.ModuleList()
+        self.batch_norms = nn.ModuleList()
+        
+        # Input layer
+        mlp = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim)
+        )
+        self.convs.append(GINConv(mlp))
+        self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
+        
+        # Hidden layers
+        for _ in range(num_layers - 2):
+            mlp = nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(), 
+                nn.Linear(hidden_dim, hidden_dim)
+            )
+            self.convs.append(GINConv(mlp))
+            self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
+        
+        # Output layer
+        mlp = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim)
+        )
+        self.convs.append(GINConv(mlp))
+        self.batch_norms.append(nn.BatchNorm1d(hidden_dim))
+        
+        self.dropout = nn.Dropout(dropout)
+        self.num_layers = num_layers
+        
+    def forward(self, x, edge_index, edge_weight=None):
+        target_dtype = next(self.parameters()).dtype
+        
+        if x.dtype != target_dtype:
+            x = x.to(target_dtype)
+            
+        for i in range(self.num_layers):
+            x = self.convs[i](x, edge_index)
+            x = self.batch_norms[i](x)
+            if i < self.num_layers - 1:
+                x = torch.relu(x)
+                x = self.dropout(x)
+        return x
+
+
 class NodeTower(nn.Module):
     def __init__(self, node_tower_cfg=None, delay_load=False, **kwargs):
         super().__init__()
@@ -189,6 +241,12 @@ class NodeTower(nn.Module):
                 hidden_dim=self.hidden_size,
                 dropout=self.dropout
             )
+        elif self.node_tower_name == 'gin':
+            self.node_encoder = GINNodeEncoder(
+                input_dim=self.num_proteins,
+                hidden_dim=self.hidden_size,
+                dropout=self.dropout
+        )
         else:
             print(f"ERROR: Unknown node tower type: {self.node_tower_name}")
             sys.exit(1)

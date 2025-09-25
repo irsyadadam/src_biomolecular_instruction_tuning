@@ -64,10 +64,10 @@ def train():
         model_config.num_proteins = getattr(data_arguments, 'num_proteins', 4792)
         model_config.proteomics_data_path = getattr(data_arguments, 'proteomics_data_path', None)
 
-        #Let dataloader know how to feed data
+        # Let dataloader know how to feed data
         data_arguments.vision_tower = model_arguments.vision_tower
 
-        # Set tower-specific configs based on which tower is actually being used
+        # Set tower-specific configs based on which tower is being used
         if model_arguments.vision_tower == 'mlp':
             model_config.mlp_tower_type = getattr(data_arguments, 'mlp_tower_type', 'mlp_3')
             model_config.mlp_hidden_size = getattr(data_arguments, 'mlp_hidden_size', 256)
@@ -77,10 +77,15 @@ def train():
             model_config.node_hidden_size = getattr(data_arguments, 'node_hidden_size', 512)
             model_config.node_dropout = getattr(data_arguments, 'node_dropout', 0.3)
             model_config.k_neighbors = getattr(data_arguments, 'k_neighbors', 7)
+        elif model_arguments.vision_tower == 'graph_tower':
+            model_config.graph_tower_type = getattr(data_arguments, 'graph_tower_type', 'gcn')
+            model_config.graph_hidden_size = getattr(data_arguments, 'graph_hidden_size', 512)
+            model_config.graph_dropout = getattr(data_arguments, 'graph_dropout', 0.3)
+            model_config.patient_graphs_dir = getattr(data_arguments, 'patient_graphs_dir', None)
         
-        # Reload vision config with updated proteomics_data_path
+        # Reload vision config with updated parameters
         model_config._load_vision_config()
-    
+        
     model = TinyLlavaForConditionalGeneration(model_config)
     
     # load pretrained checkpoint

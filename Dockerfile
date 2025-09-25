@@ -1,6 +1,5 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
-# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONPATH="/workspace"
 ENV HF_HOME="/workspace/.cache/huggingface"
@@ -23,28 +22,22 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Use python3.10 and pip3 directly (no symbolic links needed)
-# Verify CUDA and nvcc installation
+
 RUN nvcc --version && \
     echo "CUDA_HOME: $CUDA_HOME" && \
     python3.10 --version
 
-# Copy your entire project
 COPY . /workspace/
 
-# Install PyTorch first with CUDA 11.8 support (use python3.10 directly)
 RUN python3.10 -m pip install --upgrade pip && \
     python3.10 -m pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
 
-# Install your project
 RUN python3.10 -m pip install -e .
 
-# Install flash-attention (should work now with CUDA development tools)
 RUN python3.10 -m pip install flash-attn==2.5.7 --no-build-isolation
 RUN python3.10 -m pip install torch-geometric==2.3.1
 RUN python3.10 -m pip install torch-scatter torch-sparse torch-cluster torch-spline-conv -f https://data.pyg.org/whl/torch-2.0.0+cu118.html
 
-# Expose ports
 EXPOSE 8888 6006 22
 
 CMD ["/bin/bash"]
