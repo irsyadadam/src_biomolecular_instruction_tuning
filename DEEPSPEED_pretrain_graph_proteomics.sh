@@ -1,15 +1,14 @@
 #!/bin/bash
 
-export PYTHONPATH="${PYTHONPATH}:/home/src_biomolecule_instruction_tuning"
+export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
 
 # GPU Configuration
-CUDA_GPU="0,1"
+CUDA_GPU="0"
 
 # Data Paths
-DATA_PATH="/path/to/data/proteomics_finetune_conversations.json"
-PATIENT_GRAPHS_DIR="/path/to/patient_graphs"
-OUTPUT_DIR="/path/to/graph_llm/pretrain"
-
+DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
+PATIENT_GRAPHS_DIR="../biomolecule_instruction_tuning/data/patient_graphs"  # Update this path
+OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/graph_llm/pretrain"
 
 # Model Configuration
 LLM_VERSION="lmsys/vicuna-7b-v1.5"
