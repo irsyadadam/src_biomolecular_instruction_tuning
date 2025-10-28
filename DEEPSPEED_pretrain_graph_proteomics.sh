@@ -3,11 +3,11 @@
 export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
 
 # GPU Configuration
-CUDA_GPU="0"
+CUDA_GPU="7"
 
 # Data Paths
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_pretrain_conversations.json"
-PATIENT_GRAPHS_DIR="../biomolecule_instruction_tuning/data/patient_graphs"  # Update this path
+PATIENT_GRAPHS_DIR="/local/irsyadadam/biomolecule_instruction_tuning/data/patient_graphs"  # Update this path
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/graph_llm/pretrain"
 
 # Model Configuration
@@ -59,7 +59,7 @@ deepspeed --include localhost:$CUDA_GPU --master_port 29501 tinyllava/train/trai
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps $SAVE_STEPS \
-    --save_total_limit 3 \
+    --save_total_limit 1 \
     --learning_rate $LEARNING_RATE \
     --weight_decay $WEIGHT_DECAY \
     --warmup_ratio $WARMUP_RATIO \

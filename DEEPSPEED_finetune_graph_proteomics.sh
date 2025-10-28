@@ -3,10 +3,10 @@
 
 export PYTHONPATH="${PYTHONPATH}:/home/irsyadadam/src_biomolecule_instruction_tuning"
 
-CUDA_GPU="0"
+CUDA_GPU="7"
 
 DATA_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/final_data/proteomics_finetune_conversations.json"
-PATIENT_GRAPHS_DIR="../biomolecule_instruction_tuning/data/patient_graphs"
+PATIENT_GRAPHS_DIR="/local/irsyadadam/biomolecule_instruction_tuning/data/patient_graphs"  # Update this path
 PRETRAINED_MODEL_PATH="/local/irsyadadam/biomolecular_instruction_tuning_data/graph_llm/pretrain"
 OUTPUT_DIR="/local/irsyadadam/biomolecular_instruction_tuning_data/graph_llm/finetune"
 
